@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-github"]
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.github.com/mcp"
+    }
+  }
+}

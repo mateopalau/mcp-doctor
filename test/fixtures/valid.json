@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"],
+      "env": {
+        "API_KEY": "${API_KEY}"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.github.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "api_key",
+      "description": "API Key",
+      "password": true
+    }
+  ]
+}

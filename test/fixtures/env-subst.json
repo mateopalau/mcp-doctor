@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "api": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["server-api"],
+      "env": {
+        "API_KEY": "${API_KEY}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "AWS_SECRET": "${AWS_SECRET_ACCESS_KEY}",
+        "CUSTOM_VAR": "${MY_CUSTOM_VAR}"
+      }
+    },
+    "http-server": {
+      "type": "http",
+      "url": "https://api.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BEARER_TOKEN}"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "api_key",
+      "description": "API Key",
+      "password": true
+    },
+    {
+      "type": "promptString",
+      "id": "github_token",
+      "description": "GitHub Token",
+      "password": true
+    }
+  ]
+}

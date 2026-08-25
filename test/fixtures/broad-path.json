@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"],
+      "env": {
+        "SOME_VAR": "value"
+      }
+    },
+    "filesystem2": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "C:\\"],
+      "cwd": "C:\\Users"
+    },
+    "filesystem3": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["server-filesystem", "~"]
+    }
+  }
+}
