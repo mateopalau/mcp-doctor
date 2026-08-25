@@ -26,7 +26,6 @@
     "vitest": "^3.2.0"
   },
   "dependencies": {
-    "jsonc-parser": "^3.3.1",
-    "mcp-doctor": "file:mcp-doctor-0.1.0.tgz"
+    "jsonc-parser": "^3.3.1"
   }
 }
