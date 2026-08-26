@@ -2,6 +2,18 @@
 
 All notable changes to MCP Doctor are documented here.
 
+## 0.1.1 - 2026-08-26
+
+### Fixed
+- Added a canonical verification manifest and `pnpm verify` runner with the
+  order `lint → typecheck → build → test → audit`.
+- Updated GitHub Actions to run the frozen install before the canonical
+  verifier, eliminating the `dist/cli.js` clean-checkout failure.
+- Added compiled-entrypoint and verification-contract regression tests with
+  actionable diagnostics when the build artifact is missing.
+- Pinned pnpm 11.23.0, isolated the standalone workspace, and stopped tracking
+  generated package tarballs.
+
 ## 0.1.0 - 2026-08-24
 
 ### Added

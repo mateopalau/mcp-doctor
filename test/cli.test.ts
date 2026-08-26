@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -17,6 +18,19 @@ const FIXTURES_DIR = resolve(__dirname, "fixtures");
 const CLI_PATH = resolve(__dirname, "../dist/cli.js");
 
 function runCli(args: string[], input?: string): { stdout: string; stderr: string; code: number } {
+  if (!existsSync(CLI_PATH)) {
+    throw new Error(
+      [
+        "FINAL_GATE FAILED",
+        "stage: test",
+        "environment: build-output",
+        "command: pnpm build",
+        "reason: dist/cli.js missing",
+        "likely cause: tests depend on build artifact but build did not run",
+      ].join("\n"),
+    );
+  }
+
   try {
     const stdout = execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
       input,
