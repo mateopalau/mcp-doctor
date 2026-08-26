@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "gates": [
+    { "name": "lint", "command": "run", "args": ["lint"] },
+    { "name": "typecheck", "command": "run", "args": ["typecheck"] },
+    { "name": "build", "command": "run", "args": ["build"] },
+    { "name": "test", "command": "run", "args": ["test"] },
+    { "name": "audit", "command": "audit", "args": ["--audit-level", "high"] }
+  ]
+}

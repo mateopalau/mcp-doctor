@@ -1,7 +1,9 @@
 node_modules/
 dist/
+.pnpm-store/
 coverage/
 *.log
+*.tgz
 .env
 .env.*
 !.env.example

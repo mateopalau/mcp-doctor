@@ -11,7 +11,7 @@ pnpm build
 
 # Or install the packed tarball
 pnpm pack
-npm install -g ./mcp-doctor-0.1.0.tgz
+npm install -g ./mcp-doctor-0.1.1.tgz
 ```
 
 ## Usage
@@ -168,12 +168,19 @@ Exit code: 1
 # Install dependencies
 pnpm install
 
-# Run all checks
+# Run the canonical verification gates
+pnpm verify
+
+# Or run the individual development checks
 pnpm lint
 pnpm typecheck
-pnpm test
 pnpm build
+pnpm test
 ```
+
+`pnpm verify` runs lint, typecheck, build, test, and the dependency audit in
+that order. The compiled CLI is intentionally tested only after `dist/` has
+been produced by the build gate.
 
 ## License
 

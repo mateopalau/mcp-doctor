@@ -1,7 +1,8 @@
 {
   "name": "mcp-doctor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
+  "packageManager": "pnpm@11.23.0",
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -14,7 +15,8 @@
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
