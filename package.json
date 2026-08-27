@@ -1,6 +1,6 @@
 {
   "name": "mcp-doctor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "packageManager": "pnpm@11.23.0",
   "type": "module",
@@ -10,12 +10,21 @@
   "bin": {
     "mcp-doctor": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
   "scripts": {
     "mcp-doctor": "node dist/cli.js",
     "build": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "security:scan": "node scripts/security-scan.mjs",
+    "security:scan:history": "node scripts/security-scan.mjs --history",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {

@@ -2,6 +2,19 @@
 
 All notable changes to MCP Doctor are documented here.
 
+## 0.1.2 - 2026-08-27
+
+### Security
+- Removed literal secret-shaped values from tracked test fixtures; detector tests
+  now generate synthetic values only at test runtime.
+- Added a deterministic current-tree and reachable-history secret scan with exact
+  fingerprints for legacy synthetic test artifacts and no broad fixture exemption.
+- Escaped terminal control characters in human-readable output and bounded input
+  reads to 10 MiB.
+- Restricted npm packaging to runtime files and public security documentation.
+- Pinned CI and CodeQL Actions to verified immutable commit SHAs, enabled least
+  privilege permissions, and added weekly Dependabot updates.
+
 ## 0.1.1 - 2026-08-26
 
 ### Fixed

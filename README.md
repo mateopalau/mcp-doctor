@@ -11,7 +11,7 @@ pnpm build
 
 # Or install the packed tarball
 pnpm pack
-npm install -g ./mcp-doctor-0.1.1.tgz
+npm install -g ./mcp-doctor-0.1.2.tgz
 ```
 
 ## Usage
@@ -178,9 +178,9 @@ pnpm build
 pnpm test
 ```
 
-`pnpm verify` runs lint, typecheck, build, test, and the dependency audit in
-that order. The compiled CLI is intentionally tested only after `dist/` has
-been produced by the build gate.
+`pnpm verify` runs the repository/history secret scan, lint, typecheck, build,
+test, and the dependency audit in that order. The compiled CLI is intentionally
+tested only after `dist/` has been produced by the build gate.
 
 ## License
 

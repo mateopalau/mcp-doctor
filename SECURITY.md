@@ -1,42 +1,56 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Only the latest released version of mcp-doctor receives security fixes.
+| Version | Security fixes |
+| --- | --- |
+| Latest release | Yes |
+| Older releases | Upgrade to the latest release |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Open a private security advisory via GitHub ("Report a vulnerability") instead of a
-public issue. Include reproduction steps and affected versions. Do not include real
-credentials in reports.
+Use GitHub's private **Report a vulnerability** flow instead of a public issue.
+Include the affected version, a minimal reproduction, impact, and mitigation. Never
+include credentials, tokens, private keys, or personal configuration data in a report.
 
-## Scope
+## Security boundaries
 
-### In Scope
-- The CLI reads only files explicitly passed as arguments or via stdin.
-- No network connections are made by the tool.
-- No configuration mutation or auto-fix is performed.
-- Secret-shaped values are **never printed** in output (human or JSON); only field paths and locations are reported.
+`mcp-doctor` is an offline, read-only inspector for one local JSON document.
 
-### Out of Scope
-- mcp-doctor does not execute MCP servers or invoke tools.
-- mcp-doctor does not validate the safety of remote MCP endpoints.
-- Findings are heuristic risk signals, not security guarantees.
-- False positives/negatives in secret/path detection are expected and not considered vulnerabilities.
+| Boundary | Guarantee in the CLI runtime |
+| --- | --- |
+| Input | Only the explicit file argument or stdin is read; input is bounded to 10 MiB |
+| Network | No network connections, remote endpoint validation, or telemetry |
+| Execution | Configured MCP servers and tools are never launched; no shell or child process is used |
+| Mutation | The target configuration and its containing directory are never modified |
+| Secrets | Secret-shaped values are not included in human or JSON output; only paths and locations are reported |
+| Terminal safety | Untrusted paths, names, and messages are escaped in human-readable output |
 
-## Security Model
+The repository's verification scripts are development-time tooling and may invoke Git,
+package-manager commands, and archive extraction to inspect repository state. Those
+scripts are not part of the installed runtime behavior.
 
-| Property | Behavior |
-|----------|----------|
-| File access | Read-only, explicit paths only |
-| Network | None |
-| Subprocess execution | None |
-| Secret handling | Detected values redacted in all outputs |
-| Configuration mutation | None (read-only) |
-| Telemetry | None |
+## Repository controls
 
-## Known Limitations
+- CI uses least-privilege read permissions for verification and pins third-party Actions
+  to immutable commit SHAs.
+- The verification gate scans the current tree and reachable Git history without
+  printing matched values. Exact historical synthetic test artifacts are fingerprinted;
+  there is no broad test-directory exemption.
+- Dependabot checks npm and GitHub Actions updates weekly.
+- CodeQL analyzes the TypeScript/JavaScript surface with only the permissions required
+  to publish code-scanning results.
+- The npm package uses an explicit allowlist and excludes repository metadata, tests,
+  fixtures, source, plans, workflows, and generated factory state.
 
-- Secret detection uses regex and entropy heuristics; false positives (e.g., UUIDs, long random strings) and false negatives are possible.
-- Broad path detection only applies to recognized filesystem server packages; custom servers with similar args may not be flagged.
-- The tool validates configuration shape, not runtime behavior of configured servers.
+## Detection limitations
+
+Secret and filesystem checks are heuristic signals, not proof of safety. They can have
+false positives and false negatives, and they do not assess the runtime behavior of a
+configured server or the safety of a remote endpoint. Input-size limits reduce local
+resource exhaustion risk but are not a general parser sandbox.
+
+No system can be proven "100% secure".
+This PASS means no known critical/high findings remain within the audited scope,
+all required hardening controls are active,
+and the evidence is reproducible from a clean checkout.

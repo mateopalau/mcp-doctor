@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import process from "node:process";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
@@ -11,10 +11,12 @@ import { validatePaths } from "./validate/paths.js";
 import { validateSecrets } from "./validate/secrets.js";
 import { formatHuman } from "./report/human.js";
 import { formatJson } from "./report/json.js";
+import { sanitizeForTerminal } from "./report/safe-text.js";
 import type { Report, Finding, Summary, CliOptions, ParsedConfig } from "./types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const MAX_INPUT_BYTES = 10 * 1024 * 1024;
 
 function getVersion(): string {
   try {
@@ -75,16 +77,32 @@ function printHelp(): void {
 async function readInput(file?: string): Promise<{ content: string; filePath: string }> {
   if (file) {
     try {
-      const content = readFileSync(file, "utf-8");
-      return { content, filePath: file };
+      const stats = statSync(file);
+      if (!stats.isFile()) {
+        throw new Error("input path is not a regular file");
+      }
+      if (stats.size > MAX_INPUT_BYTES) {
+        throw new Error(`input exceeds the ${MAX_INPUT_BYTES} byte limit`);
+      }
+      const buffer = readFileSync(file);
+      if (buffer.byteLength > MAX_INPUT_BYTES) {
+        throw new Error(`input exceeds the ${MAX_INPUT_BYTES} byte limit`);
+      }
+      return { content: buffer.toString("utf-8"), filePath: file };
     } catch (error) {
       throw new Error(`Failed to read file "${file}": ${error}`);
     }
   }
 
   const chunks: Buffer[] = [];
+  let totalBytes = 0;
   for await (const chunk of process.stdin) {
-    chunks.push(chunk);
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.byteLength;
+    if (totalBytes > MAX_INPUT_BYTES) {
+      throw new Error(`input exceeds the ${MAX_INPUT_BYTES} byte limit`);
+    }
+    chunks.push(buffer);
   }
   const content = Buffer.concat(chunks).toString("utf-8");
   return { content, filePath: "stdin" };
@@ -186,7 +204,7 @@ async function main(): Promise<void> {
     process.exit(exitCode);
   } catch (error) {
     if (error instanceof Error) {
-      process.stderr.write(`Error: ${error.message}\n`);
+      process.stderr.write(`Error: ${sanitizeForTerminal(error.message)}\n`);
     } else {
       process.stderr.write("Error: Unknown error\n");
     }
