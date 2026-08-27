@@ -1,9 +1,10 @@
 import type { Report, Finding } from "../types.js";
+import { sanitizeForTerminal } from "./safe-text.js";
 
 export function formatHuman(report: Report): string {
   const lines: string[] = [];
 
-  lines.push(`mcp-doctor: Analyzing ${report.file}`);
+  lines.push(`mcp-doctor: Analyzing ${sanitizeForTerminal(report.file)}`);
   lines.push("");
 
   const hasSyntaxError = report.findings.some((f) => f.code === "json-syntax-error");
@@ -25,7 +26,7 @@ export function formatHuman(report: Report): string {
 
   for (const finding of report.findings) {
     if (finding.code === "json-syntax-error") {
-      lines.push(`✗ JSON syntax error: ${finding.message}`);
+      lines.push(`✗ JSON syntax error: ${sanitizeForTerminal(finding.message)}`);
       continue;
     }
 
@@ -33,9 +34,9 @@ export function formatHuman(report: Report): string {
     const locationStr = formatLocations(finding.locations);
 
     if (finding.code === "duplicate-server-name") {
-      lines.push(`✗ ${finding.message} at ${locationStr}`);
+      lines.push(`✗ ${sanitizeForTerminal(finding.message)} at ${locationStr}`);
     } else {
-      lines.push(`${prefix} ${finding.severity.charAt(0).toUpperCase() + finding.severity.slice(1)}: ${finding.message} at ${locationStr}`);
+      lines.push(`${prefix} ${finding.severity.charAt(0).toUpperCase() + finding.severity.slice(1)}: ${sanitizeForTerminal(finding.message)} at ${locationStr}`);
     }
   }
 
@@ -63,7 +64,7 @@ function getSeverityPrefix(severity: Finding["severity"]): string {
 
 function formatLocations(locations: Array<{ path: string; line: number; column: number }>): string {
   return locations
-    .map((loc) => `${loc.path} (line ${loc.line}, col ${loc.column})`)
+    .map((loc) => `${sanitizeForTerminal(loc.path)} (line ${loc.line}, col ${loc.column})`)
     .join(", ");
 }
 

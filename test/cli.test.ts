@@ -1,8 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 interface Finding {
   code: string;
@@ -32,7 +33,7 @@ function runCli(args: string[], input?: string): { stdout: string; stderr: strin
   }
 
   try {
-    const stdout = execSync(`node ${CLI_PATH} ${args.join(" ")}`, {
+    const stdout = execFileSync(process.execPath, [CLI_PATH, ...args], {
       input,
       encoding: "utf-8",
       cwd: __dirname,
@@ -50,6 +51,51 @@ function runCli(args: string[], input?: string): { stdout: string; stderr: strin
     }
     throw error;
   }
+}
+
+interface SyntheticSecretFixture {
+  filePath: string;
+  values: string[];
+}
+
+function createSyntheticSecretValues(): Record<string, string> {
+  return {
+    openAi: `sk-${"a".repeat(24)}`,
+    github: `ghp_${"a".repeat(36)}`,
+    awsAccess: `AKIA${"A".repeat(16)}`,
+    awsSecret: `${"aB7/".repeat(10)}`,
+    privateKey: `${["-----BEGIN ", "RSA PRIVATE ", "KEY-----"].join("")}\n${"A".repeat(24)}\n-----END RSA PRIVATE KEY-----`,
+    database: ["postgresql", "://", "user", ":", "password", "@localhost:5432/db"].join(""),
+    bearer: ["Bearer ", "eyJ", "a".repeat(24), ".", "b".repeat(16), ".", "c".repeat(16)].join(""),
+  };
+}
+
+function withTemporaryJson<T>(content: string, callback: (filePath: string) => T): T {
+  const directory = mkdtempSync(join(tmpdir(), "mcp-doctor-test-"));
+  const filePath = join(directory, "config.json");
+  writeFileSync(filePath, content, "utf-8");
+
+  try {
+    return callback(filePath);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function withSyntheticSecretsFixture<T>(callback: (fixture: SyntheticSecretFixture) => T): T {
+  const values = createSyntheticSecretValues();
+  const template = readFileSync(resolve(FIXTURES_DIR, "secrets.json"), "utf-8");
+  const escapeJsonString = (value: string): string => JSON.stringify(value).slice(1, -1);
+  const content = template
+    .replace("${SYNTHETIC_OPENAI_KEY}", escapeJsonString(values.openAi))
+    .replace("${SYNTHETIC_GITHUB_TOKEN}", escapeJsonString(values.github))
+    .replace("${SYNTHETIC_AWS_ACCESS_KEY}", escapeJsonString(values.awsAccess))
+    .replace("${SYNTHETIC_AWS_SECRET_KEY}", escapeJsonString(values.awsSecret))
+    .replace("${SYNTHETIC_PRIVATE_KEY}", escapeJsonString(values.privateKey))
+    .replace("${SYNTHETIC_DATABASE_URL}", escapeJsonString(values.database))
+    .replace("${SYNTHETIC_BEARER_TOKEN}", escapeJsonString(values.bearer));
+
+  return withTemporaryJson(content, (filePath) => callback({ filePath, values: Object.values(values) }));
 }
 
 describe("mcp-doctor CLI", () => {
@@ -157,34 +203,37 @@ describe("mcp-doctor CLI", () => {
 
   describe("secrets.json", () => {
     it("should fail with exit code 2 for high-severity secrets", () => {
-      const result = runCli([resolve(FIXTURES_DIR, "secrets.json")]);
-      expect(result.code).toBe(2);
-      expect(result.stdout).toContain("Secret-shaped value detected");
-      expect(result.stdout).toContain("Exit code: 2");
+      withSyntheticSecretsFixture(({ filePath }) => {
+        const result = runCli([filePath]);
+        expect(result.code).toBe(2);
+        expect(result.stdout).toContain("Secret-shaped value detected");
+        expect(result.stdout).toContain("Exit code: 2");
+      });
     });
 
     it("should report various secret types", () => {
-      const result = runCli(["--json", resolve(FIXTURES_DIR, "secrets.json")]);
-      expect(result.code).toBe(2);
-      const report = JSON.parse(result.stdout);
-      const secretFindings = report.findings.filter((f: Finding) => f.code === "secret-shaped-value");
-      expect(secretFindings.length).toBeGreaterThanOrEqual(6);
-      for (const finding of secretFindings) {
-        expect(finding.severity).toBe("high");
-        expect(finding.redacted).toBe(true);
-        expect(finding.message).toContain("Secret-shaped value detected");
-      }
+      withSyntheticSecretsFixture(({ filePath }) => {
+        const result = runCli(["--json", filePath]);
+        expect(result.code).toBe(2);
+        const report = JSON.parse(result.stdout);
+        const secretFindings = report.findings.filter((f: Finding) => f.code === "secret-shaped-value");
+        expect(secretFindings.length).toBeGreaterThanOrEqual(6);
+        for (const finding of secretFindings) {
+          expect(finding.severity).toBe("high");
+          expect(finding.redacted).toBe(true);
+          expect(finding.message).toContain("Secret-shaped value detected");
+        }
+      });
     });
 
     it("should not output actual secret values", () => {
-      const result = runCli([resolve(FIXTURES_DIR, "secrets.json")]);
-      expect(result.stdout).not.toContain("sk-abcdefghijklmnopqrstuvwxyz123456");
-      expect(result.stdout).not.toContain("ghp_abcdefghijklmnopqrstuvwxyz123456");
-      expect(result.stdout).not.toContain("AKIAIOSFODNN7EXAMPLE");
-      expect(result.stdout).not.toContain("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY");
-      expect(result.stdout).not.toContain("BEGIN RSA PRIVATE KEY");
-      expect(result.stdout).not.toContain("postgresql://user:password@localhost:5432/db");
-      expect(result.stdout).not.toContain("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9");
+      withSyntheticSecretsFixture(({ filePath, values }) => {
+        const result = runCli([filePath]);
+        for (const value of values) {
+          expect(result.stdout).not.toContain(value);
+          expect(result.stderr).not.toContain(value);
+        }
+      });
     });
   });
 
@@ -270,6 +319,46 @@ describe("mcp-doctor CLI", () => {
       const result = runCli([resolve(FIXTURES_DIR, "valid.json"), resolve(FIXTURES_DIR, "valid.json")]);
       expect(result.code).toBe(3);
       expect(result.stderr).toContain("Only one config file can be specified");
+    });
+
+    it("should sanitize terminal control characters in file errors", () => {
+      const result = runCli([`missing\u001b[31m\nfile.json`]);
+      expect(result.code).toBe(3);
+      expect(result.stderr).not.toContain("\u001b");
+      expect(result.stderr).toContain("\\x1B[31m\\x0Afile.json");
+    });
+  });
+
+  describe("adversarial input", () => {
+    it("redacts nested secrets and neutralizes terminal injection in human output", () => {
+      const values = createSyntheticSecretValues();
+      const maliciousPath = "../\u001b[31m\ninjected";
+      const config = JSON.stringify({
+        mcpServers: {
+          filesystem: {
+            type: "stdio",
+            command: "npx",
+            args: ["@modelcontextprotocol/server-filesystem", maliciousPath],
+            env: { TOKEN: values.openAi },
+            headers: { Authorization: values.bearer },
+          },
+        },
+      });
+
+      withTemporaryJson(config, (filePath) => {
+        const result = runCli([filePath]);
+        expect(result.code).toBe(2);
+        expect(result.stdout).not.toContain("\u001b");
+        expect(result.stdout).toContain("../\\x1B[31m\\x0Ainjected");
+        expect(result.stdout).not.toContain(values.bearer);
+        expect(result.stdout).not.toContain(values.openAi);
+      });
+    });
+
+    it("rejects input larger than the bounded read limit", () => {
+      const result = runCli([], "{" + "x".repeat(10 * 1024 * 1024) + "}");
+      expect(result.code).toBe(3);
+      expect(result.stderr).toContain("input exceeds the 10485760 byte limit");
     });
   });
 });

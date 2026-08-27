@@ -1,6 +1,7 @@
 {
   "version": 1,
   "gates": [
+    { "name": "security-scan", "command": "run", "args": ["security:scan:history"] },
     { "name": "lint", "command": "run", "args": ["lint"] },
     { "name": "typecheck", "command": "run", "args": ["typecheck"] },
     { "name": "build", "command": "run", "args": ["build"] },
