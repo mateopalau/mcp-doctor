@@ -28,13 +28,13 @@
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@types/node": "^24.0.0",
-    "eslint": "^9.0.0",
-    "tsx": "^4.20.0",
-    "typescript": "^5.9.0",
-    "typescript-eslint": "^8.0.0",
-    "vitest": "^3.2.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.5.1",
+    "eslint": "^10.10.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1"
